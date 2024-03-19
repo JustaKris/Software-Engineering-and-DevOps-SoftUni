@@ -13,7 +13,10 @@ npm run start-fe
 npm run start-be
 
 # Check branches
+git branch "UI-testing"
 git branch -vv
+git checkout "UI-testing"
+git merge "main"
 
 # Run tests
 npx playwright test tests/ui.test.js

@@ -135,48 +135,270 @@ test('Login with valid password only', async ({ page }) => {
 
 // Register page testing
 test('Register with valid credentials', async ({ page }) => {
-    await page.goto(baseURL + "/login");
+    await page.goto(baseURL + "/register");
 
     // Submit valid credentials
-    await page.fill('input[name="email"]', 'abz@abv.bg');
+    await page.fill('input[name="email"]', 'k.s.bonev@gmail.com');
     await page.fill('input[name="password"]', 'password');
     await page.fill('input[name="confirm-pass"]', 'password');
     await page.click('input[type="submit"]');
 
-    // Check if we were directed to the correct page
-    await page.$('a[href="/login"]');
-    expect(page.url()).toBe(baseURL + "/login");
+    // Check if we were directed to the catalog page upon successful registration
+    await page.$('a[href="/catalog"]');
+    expect(page.url()).toBe(baseURL + "/catalog");
 });
 
 test('Register without credentials', async ({ page }) => {
-    await page.goto(baseURL + "/login");
+    await page.goto(baseURL + "/register");
+
+    // Submit no credentials
+    await page.click('input[type="submit"]');
+
+    // Check if we were directed back to the register page
+    await page.$('a[href="/register"]');
+    expect(page.url()).toBe(baseURL + "/register");
 });
 
-test('Register without email credentials', async ({ page }) => {
-    await page.goto(baseURL + "/login");
+test('Register without email', async ({ page }) => {
+    await page.goto(baseURL + "/register");
+
+    // Submit passwords only
+    await page.fill('input[name="password"]', 'password');
+    await page.fill('input[name="confirm-pass"]', 'password');
+    await page.click('input[type="submit"]');
+
+    // Check if we were directed back to the register page
+    await page.$('a[href="/register"]');
+    expect(page.url()).toBe(baseURL + "/register");
 });
 
 test('Register password email credentials', async ({ page }) => {
-    await page.goto(baseURL + "/login");
+    await page.goto(baseURL + "/register");
 });
 
 test('Register without confirming password credentials', async ({ page }) => {
-    await page.goto(baseURL + "/login");
+    await page.goto(baseURL + "/register");
+
+    // Submit valid credentials with no confirm password
+    await page.fill('input[name="email"]', 'k.s.bonev@gmail.com');
+    await page.fill('input[name="password"]', 'password');
+    await page.click('input[type="submit"]');
+
+    // Check if we were directed back to the register page
+    await page.$('a[href="/register"]');
+    expect(page.url()).toBe(baseURL + "/register");
 });
 
 test('Register with different passwords credentials', async ({ page }) => {
-    await page.goto(baseURL + "/login");
+    await page.goto(baseURL + "/register");
+
+    // Submit different passwords with valid email
+    await page.fill('input[name="email"]', 'k.s.bonev@gmail.com');
+    await page.fill('input[name="password"]', 'password');
+    await page.fill('input[name="confirm-pass"]', 'drowssap');
+    await page.click('input[type="submit"]');
+
+    // Check if we were directed back to the register page
+    await page.$('a[href="/register"]');
+    expect(page.url()).toBe(baseURL + "/register");
 });
 
-
 // "Add Book" page testing
+// test('Login and test no books message', async ({ page }) => {
+//     await page.goto(baseURL + "/login");
+    
+//     // Login to valid account
+//     await page.fill('input[name="email"]', username);
+//     await page.fill('input[name="password"]', password);
+//     await Promise.all([
+//         page.click('input[type="submit"]'),
+//         page.waitForURL(baseURL + '/catalog')
+//     ]);
 
+//     // Select "All Books" page
+//     await page.waitForSelector('.dashboard');
 
+//     // Confirm that book list is not empty
+//     const noBooksMessage = await page.textContent('.no-books');
+//     expect(noBooksMessage).toBe('No books in database!');
+// });
 
-// "All Books" page testing
+test('"Add Book" with correct data', async ({ page }) => {
+    await page.goto(baseURL + "/login");
+    
+    // Login to valid account
+    await page.fill('input[name="email"]', username);
+    await page.fill('input[name="password"]', password);
+    await Promise.all([
+        page.click('input[type="submit"]'),
+        page.waitForURL(baseURL + '/catalog')
+    ]);
+    
+    // Go to "Add Book" page
+    await page.click('a[href="/create"]');
+    await page.waitForSelector('#create-form');
 
+    // Fill book details
+    await page.fill('#title', 'The Lord of the Rings');
+    await page.fill('#description', 'Best book ever!!!!');
+    await page.fill('#image', 'https://example.com/book-image.jpg');
+    await page.selectOption('#type', 'Fiction');
+
+    // Submit book
+    await page.click('#create-form input[type="submit"]');
+
+    // Check if we get rerouted back to the catalog page
+    await page.waitForURL(baseURL + '/catalog');
+    expect(page.url()).toBe(baseURL + '/catalog');
+});
+
+test('"Add Book" without title', async ({ page }) => {
+    await page.goto(baseURL + "/login");
+    
+    // Login to valid account
+    await page.fill('input[name="email"]', username);
+    await page.fill('input[name="password"]', password);
+    await Promise.all([
+        page.click('input[type="submit"]'),
+        page.waitForURL(baseURL + '/catalog')
+    ]);
+    
+    // Go to "Add Book" page
+    await page.click('a[href="/create"]');
+    await page.waitForSelector('#create-form');
+
+    // Fill book details with no title
+    await page.fill('#description', 'Best book ever!!!!');
+    await page.fill('#image', 'https://example.com/book-image.jpg');
+    await page.selectOption('#type', 'Fiction');
+    
+    // Submit book
+    await page.click('#create-form input[type="submit"]');
+
+    // Check for alert
+    page.on('dialog', async dialog => {
+        expect(dialog.type()).toContain('alert');
+        expect(dialog.message()).toContain('All fields are required!');
+        await dialog.accept();
+    });
+
+    // Check if we get rerouted back to the "Add Book" page
+    await page.$('a[href="/create"]');
+    expect(page.url()).toBe(baseURL + '/create');
+});
+
+test('Login and verify all books are displayed', async ({ page }) => {
+    await page.goto(baseURL + "/login");
+    
+    // Login to valid account
+    await page.fill('input[name="email"]', username);
+    await page.fill('input[name="password"]', password);
+    await Promise.all([
+        page.click('input[type="submit"]'),
+        page.waitForURL(baseURL + '/catalog')
+    ]);
+
+    // Select "All Books" page
+    await page.waitForSelector('.dashboard');
+
+    // Confirm that book list is not empty
+    const bookElements = await page.$$('.other-books-list li');
+    expect(bookElements.length).toBeGreaterThan(0);
+});
 
 // "Details" page testing
+test('Login and navigate to Details page', async ({ page }) => {
+    await page.goto(baseURL + "/login");
+    
+    // Login to valid account
+    await page.fill('input[name="email"]', username);
+    await page.fill('input[name="password"]', password);
+    await Promise.all([
+        page.click('input[type="submit"]'),
+        page.waitForURL(baseURL + '/catalog')
+    ]);
 
+    // Find first book, click it and wait for the page to load
+    await page.click('a[href="/catalog"]');
+    await page.waitForSelector('.otherBooks');
+    await page.click('.otherBooks a.button');
+    await page.waitForSelector('.book-information');
+
+    // Confirm that book page has been selected
+    const detailsPageTitle = await page.textContent('.book-information h3');
+    expect(detailsPageTitle).toBe('The Lord of the Rings');
+});
+
+test('Verify guest user sees Details Button and that it works correctly', async ({ page }) => {
+    await page.goto(baseURL);
+
+    // Find first book, click it and wait for the page to load
+    await page.click('a[href="/catalog"]');
+    await page.waitForSelector('.otherBooks');
+    await page.click('.otherBooks a.button');
+    await page.waitForSelector('.book-information');
+
+    // Confirm that book page has been selected and information is displayed correctly
+    const detailsPageTitle = await page.textContent('.book-information h3');
+    expect(detailsPageTitle).toBe('The Lord of the Rings');
+});
+
+test('Verify that Edit and Delete buttons are visible for creator', async ({ page }) => {
+    await page.goto(baseURL + "/login");
+    
+    // Login to valid account
+    await page.fill('input[name="email"]', username);
+    await page.fill('input[name="password"]', password);
+    await Promise.all([
+        page.click('input[type="submit"]'),
+        page.waitForURL(baseURL + '/catalog')
+    ]);
+
+    // Find first book, click Details it and wait for the page to load
+    await page.click('a[href="/catalog"]');
+    await page.waitForSelector('.otherBooks');
+    await page.click('.otherBooks a.button');
+    await page.waitForSelector('.book-information');
+
+    // Check if Edit Button is visible
+    const editButton = await page.$(`a:has-text("Edit")`);
+    const isEditButtonVisible = await editButton.isVisible();
+    expect(isEditButtonVisible).toBe(true);
+
+    // Check if Delete Button is visible
+    const deleteButton = await page.$(`a:has-text("Delete")`);
+    const isDeleteButtonVisible = await deleteButton.isVisible();
+    expect(isDeleteButtonVisible).toBe(true);
+});
+
+test('Verify that Edit and Delete buttons are not visible to non-creators', async ({ page }) => {
+
+});
+
+test('Verify Like Button is not visible to creator', async ({ page }) => {
+    
+});
+
+test('Verify Like Button is visible to non-creators', async ({ page }) => {
+    
+});
 
 // "Logout" testing
+test('Verify redirection of Logout link after user login', async ({ page }) => {
+    await page.goto(baseURL + '/login');
+
+    // Login to valid account
+    await page.fill('input[name="email"]', username);
+    await page.fill('input[name="password"]', password);
+    await Promise.all([
+        page.click('input[type="submit"]'),
+        page.waitForURL(baseURL + '/catalog')
+    ]);
+
+    const logoutLink = await page.$('a[href="javascript:void(0)"]');
+    await logoutLink.click();
+
+    // Confirm we have been redirected to catalog page
+    const redirectedURL = page.url();
+    expect(redirectedURL).toBe(baseURL + '/catalog');
+});
