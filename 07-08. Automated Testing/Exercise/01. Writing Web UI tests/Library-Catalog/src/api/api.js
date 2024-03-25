@@ -1,6 +1,11 @@
+// import { config } from "process";
+// import * as config from "../config.js"
+
 export const settings = {
     host: '',
 };
+
+// export const settings = config.settings.host;  // setup to work on Render
 
 async function request(url, options) {
     try {
