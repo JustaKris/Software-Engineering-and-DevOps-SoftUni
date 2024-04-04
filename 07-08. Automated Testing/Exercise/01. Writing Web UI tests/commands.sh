@@ -23,3 +23,8 @@ npx playwright test tests/ui.test.js
 
 # Run test-ui command from package.json (after adding it manually)
 npm run test-ui
+
+# Render data
+SERVICE_BACKEND_ID = srv-co0ngala73kc73ccfhmg
+SERVICE_FRONTEND_ID = srv-co0nh7sf7o1s73c8gpi0
+RENDER_TOKEN = rnd_U1iibv2N7cqAWkjhnuFKcxEoihsI

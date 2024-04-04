@@ -1,0 +1,51 @@
+name: Build, Test and Deploy
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    - name: Use Node.js 20.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 20.x
+        cache: 'npm'
+
+    - name: Install package.json dependencies
+      run: npm install
+    - name: Run backend
+      run: npm run start-be &
+    - name: Run frontend
+      run: npm run start-fe &
+    - name: Install Playwright browsers
+      run: npx playwright install
+    - name: Run Playwright UI tests
+      run: npm run test-ui
+
+  deploy-backend-to-render:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    steps:
+    - name: Deploy to production
+      uses: johnbeynon/render-deploy-action@v0.0.8
+      with:
+        service-id: ${{ secrets.SERVICE_BACKEND_ID }}
+        api-key: ${{ secrets.RENDER_TOKEN }}
+  
+  deploy-frontend-to-render:
+    runs-on: ubuntu-latest
+    needs: deploy-backend-to-render
+    steps:
+    - name: Deploy to production
+      uses: johnbeynon/render-deploy-action@v0.0.8
+      with:
+        service-id: ${{ secrets.SERVICE_FRONTEND_ID }}
+        api-key: ${{ secrets.RENDER_TOKEN }}
